@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Code掃描速率測試</title>
+</head>
+<body>
+    <h1>QR Code掃描速率測試</h1>
+    <p>請掃描QR Code以測試回傳速率</p>
+    <div id="result"></div>
+
+    <script>
+        // 從URL獲取生成時的時間戳
+        const urlParams = new URLSearchParams(window.location.search);
+        const startTime = parseInt(urlParams.get('timestamp')); // 生成QR Code的時間戳
+        const endTime = Date.now(); // 當前時間戳（掃描後到達頁面的時間）
+
+        // 計算時間差（單位：毫秒）
+        const timeDifference = endTime - startTime;
+
+        // 顯示結果
+        document.getElementById('result').innerHTML = `
+            <p>生成時間戳: ${startTime}</p>
+            <p>掃描完成時間戳: ${endTime}</p>
+            <p>回傳耗時: ${timeDifference} 毫秒</p>
+        `;
+    </script>
+</body>
+</html>
