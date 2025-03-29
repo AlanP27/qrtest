@@ -17,6 +17,15 @@
         th {
             background-color: #f2f2f2;
         }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #averageTime {
+            margin-top: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -33,6 +42,8 @@
         </thead>
         <tbody id="historyTable"></tbody>
     </table>
+    <button onclick="clearHistory()">清除記錄</button>
+    <div id="averageTime"></div>
 
     <script>
         // 從本地儲存中加載歷史記錄
@@ -49,6 +60,37 @@
             const seconds = String(date.getSeconds()).padStart(2, '0');
             const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        // 更新表格和平均時間
+        function updateTableAndAverage() {
+            const historyTable = document.getElementById('historyTable');
+            historyTable.innerHTML = '';
+            scanHistory.forEach(data => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${data.startTimeFormatted}</td>
+                    <td>${data.endTimeFormatted}</td>
+                    <td>${data.timeDifferenceSeconds}</td>
+                `;
+                historyTable.appendChild(row);
+            });
+
+            // 計算平均掃描時間
+            if (scanHistory.length > 0) {
+                const totalTime = scanHistory.reduce((sum, data) => sum + parseFloat(data.timeDifferenceSeconds), 0);
+                const averageTime = (totalTime / scanHistory.length).toFixed(3);
+                document.getElementById('averageTime').innerHTML = `平均掃描時間: ${averageTime} 秒`;
+            } else {
+                document.getElementById('averageTime').innerHTML = `平均掃描時間: 無記錄`;
+            }
+        }
+
+        // 清除記錄
+        function clearHistory() {
+            scanHistory = [];
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            updateTableAndAverage();
         }
 
         // 從URL獲取生成時間戳
@@ -68,18 +110,8 @@
         scanHistory.push(scanData);
         localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
 
-        // 更新表格
-        const historyTable = document.getElementById('historyTable');
-        historyTable.innerHTML = '';
-        scanHistory.forEach(data => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${data.startTimeFormatted}</td>
-                <td>${data.endTimeFormatted}</td>
-                <td>${data.timeDifferenceSeconds}</td>
-            `;
-            historyTable.appendChild(row);
-        });
+        // 初次更新表格和平均時間
+        updateTableAndAverage();
     </script>
 </body>
 </html>
