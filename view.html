@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>查看掃描記錄</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #averageTime {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>掃描記錄查看</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>掃描時間</th>
+                <th>耗時 (秒)</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+    </table>
+    <button onclick="clearHistory()">清除記錄</button>
+    <div id="averageTime"></div>
+
+    <script>
+        // 從本地儲存中加載掃描記錄
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
+
+        // 格式化時間戳為日期和時間（含毫秒）
+        function formatTimestamp(ms) {
+            const date = new Date(ms);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        // 更新表格和平均時間
+        function updateTableAndAverage() {
+            const historyTable = document.getElementById('historyTable');
+            historyTable.innerHTML = '';
+            if (scanHistory.length === 0) {
+                historyTable.innerHTML = '<tr><td colspan="2">無記錄</td></tr>';
+            } else {
+                const firstScanTime = scanHistory[0].scanTime; // 以第一次掃描為基準
+                scanHistory.forEach(data => {
+                    const timeDifferenceSeconds = ((data.scanTime - firstScanTime) / 1000).toFixed(3);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formatTimestamp(data.scanTime)}</td>
+                        <td>${timeDifferenceSeconds}</td>
+                    `;
+                    historyTable.appendChild(row);
+                });
+            }
+
+            // 計算平均掃描時間
+            if (scanHistory.length > 1) {
+                const totalTime = scanHistory.slice(1).reduce((sum, data) => {
+                    return sum + (data.scanTime - scanHistory[0].scanTime);
+                }, 0);
+                const averageTime = (totalTime / (scanHistory.length - 1) / 1000).toFixed(3);
+                document.getElementById('averageTime').innerHTML = `平均掃描時間: ${averageTime} 秒`;
+            } else {
+                document.getElementById('averageTime').innerHTML = `平均掃描時間: 無記錄`;
+            }
+        }
+
+        // 清除記錄
+        function clearHistory() {
+            scanHistory = [];
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            updateTableAndAverage();
+        }
+
+        // 初次載入時更新表格
+        updateTableAndAverage();
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>掃描回傳</title>
+</head>
+<body>
+    <h1>掃描已記錄</h1>
+    <p>請前往查看頁面檢查結果：<a href="https://alanp27.github.io/qrtest/view">查看記錄</a></p>
+
+    <script>
+        // 從本地儲存中加載掃描記錄
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
+
+        // 獲取當前時間戳
+        const scanTime = Date.now();
+
+        // 添加掃描記錄（僅儲存時間戳）
+        scanHistory.push({ scanTime });
+        localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+    </script>
+</body>
+</html>
