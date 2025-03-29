@@ -21,55 +21,62 @@
 </head>
 <body>
     <h1>QR Code掃描速率測試</h1>
-    <p>請掃描QR Code以測試回傳速率</p>
-    <div id="currentResult"></div>
-    <h2>歷史掃描記錄</h2>
+    <p>請掃描列印的QR Code以測試回傳速率</p>
+    <h2>掃描記錄</h2>
     <table>
         <thead>
             <tr>
-                <th>掃描ID</th>
-                <th>生成時間戳</th>
-                <th>掃描時間戳</th>
-                <th>回傳耗時 (毫秒)</th>
+                <th>生成時間</th>
+                <th>掃描時間</th>
+                <th>耗時 (秒)</th>
             </tr>
         </thead>
         <tbody id="historyTable"></tbody>
     </table>
 
     <script>
-        // 從本地儲存中加載歷史記錄（如果有）
+        // 從本地儲存中加載歷史記錄
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
 
-        // 從URL獲取參數
+        // 格式化時間戳為日期和時間（含毫秒）
+        function formatTimestamp(ms) {
+            const date = new Date(ms);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        // 從URL獲取生成時間戳
         const urlParams = new URLSearchParams(window.location.search);
         const startTime = parseInt(urlParams.get('timestamp')) || Date.now();
-        const scanId = urlParams.get('scanId') || `SCAN_${Date.now()}`;
         const endTime = Date.now();
-        const timeDifference = endTime - startTime;
 
-        // 顯示當前掃描結果
-        document.getElementById('currentResult').innerHTML = `
-            <p>當前掃描 - ID: ${scanId}</p>
-            <p>生成時間戳: ${startTime}</p>
-            <p>掃描完成時間戳: ${endTime}</p>
-            <p>回傳耗時: ${timeDifference} 毫秒</p>
-        `;
+        // 計算耗時（秒，保留三位小數）
+        const timeDifferenceSeconds = ((endTime - startTime) / 1000).toFixed(3);
+
+        // 格式化時間
+        const startTimeFormatted = formatTimestamp(startTime);
+        const endTimeFormatted = formatTimestamp(endTime);
 
         // 添加到歷史記錄
-        const scanData = { scanId, startTime, endTime, timeDifference };
+        const scanData = { startTimeFormatted, endTimeFormatted, timeDifferenceSeconds };
         scanHistory.push(scanData);
         localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
 
-        // 更新歷史表格
+        // 更新表格
         const historyTable = document.getElementById('historyTable');
         historyTable.innerHTML = '';
         scanHistory.forEach(data => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${data.scanId}</td>
-                <td>${data.startTime}</td>
-                <td>${data.endTime}</td>
-                <td>${data.timeDifference}</td>
+                <td>${data.startTimeFormatted}</td>
+                <td>${data.endTimeFormatted}</td>
+                <td>${data.timeDifferenceSeconds}</td>
             `;
             historyTable.appendChild(row);
         });
