@@ -3,27 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <title>QR Code掃描速率測試</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <h1>QR Code掃描速率測試</h1>
     <p>請掃描QR Code以測試回傳速率</p>
-    <div id="result"></div>
+    <div id="currentResult"></div>
+    <h2>歷史掃描記錄</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>掃描ID</th>
+                <th>生成時間戳</th>
+                <th>掃描時間戳</th>
+                <th>回傳耗時 (毫秒)</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+    </table>
 
     <script>
-        // 從URL獲取生成時的時間戳
-        const urlParams = new URLSearchParams(window.location.search);
-        const startTime = parseInt(urlParams.get('timestamp')); // 生成QR Code的時間戳
-        const endTime = Date.now(); // 當前時間戳（掃描後到達頁面的時間）
+        // 從本地儲存中加載歷史記錄（如果有）
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
 
-        // 計算時間差（單位：毫秒）
+        // 從URL獲取參數
+        const urlParams = new URLSearchParams(window.location.search);
+        const startTime = parseInt(urlParams.get('timestamp')) || Date.now();
+        const scanId = urlParams.get('scanId') || `SCAN_${Date.now()}`;
+        const endTime = Date.now();
         const timeDifference = endTime - startTime;
 
-        // 顯示結果
-        document.getElementById('result').innerHTML = `
+        // 顯示當前掃描結果
+        document.getElementById('currentResult').innerHTML = `
+            <p>當前掃描 - ID: ${scanId}</p>
             <p>生成時間戳: ${startTime}</p>
             <p>掃描完成時間戳: ${endTime}</p>
             <p>回傳耗時: ${timeDifference} 毫秒</p>
         `;
+
+        // 添加到歷史記錄
+        const scanData = { scanId, startTime, endTime, timeDifference };
+        scanHistory.push(scanData);
+        localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+
+        // 更新歷史表格
+        const historyTable = document.getElementById('historyTable');
+        historyTable.innerHTML = '';
+        scanHistory.forEach(data => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${data.scanId}</td>
+                <td>${data.startTime}</td>
+                <td>${data.endTime}</td>
+                <td>${data.timeDifference}</td>
+            `;
+            historyTable.appendChild(row);
+        });
     </script>
 </body>
 </html>
