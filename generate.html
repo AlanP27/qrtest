@@ -2,18 +2,25 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>生成 QR Code 網址</title>
+    <title>生成複雜 QR Code 網址</title>
 </head>
 <body>
-    <h1>生成 QR Code 網址</h1>
-    <button onclick="generateUrl()">點我生成網址</button>
-    <p id="result"></p>
+    <h1>生成複雜 QR Code 網址</h1>
+    <button onclick="generateComplexUrl()">點我生成複雜網址</button>
+    <p id="result">點擊按鈕後，這裡會顯示網址</p>
 
     <script>
-        function generateUrl() {
+        function generateComplexUrl() {
             const timestamp = Date.now();
-            const qrUrl = `https://alanp27.github.io/qrtest/scan.html?timestamp=${timestamp}`;
-            document.getElementById('result').innerHTML = qrUrl;
+            // 基本網址
+            const baseUrl = `https://alanp27.github.io/qrtest/scan.html?timestamp=${timestamp}`;
+            // 增加填充內容，讓網址變長到約 200 字符
+            const padding = "x".repeat(150) + "end";
+            const complexUrl = `${baseUrl}&data=${padding}`;
+            
+            // 顯示生成的網址
+            document.getElementById('result').innerHTML = complexUrl;
+            console.log("Generated URL:", complexUrl); // 在控制台顯示，方便檢查
         }
     </script>
 </body>
