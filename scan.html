@@ -17,15 +17,21 @@
         let startTime = parseInt(urlParams.get('timestamp'));
 
         // 檢查 startTime 是否有效
+        console.log('URL 參數:', urlParams.toString());
+        console.log('原始 timestamp:', urlParams.get('timestamp'));
+        console.log('解析後的 startTime:', startTime);
+
         if (!startTime || isNaN(startTime)) {
             console.error('無法從 URL 獲取有效 timestamp，預設使用當前時間');
             startTime = Date.now();
         }
 
         const endTime = Date.now();
+        console.log('endTime:', endTime);
 
         // 計算耗時（秒，保留三位小數）
         const timeDifferenceSeconds = ((endTime - startTime) / 1000).toFixed(3);
+        console.log('耗時 (秒):', timeDifferenceSeconds);
 
         // 格式化時間戳為日期和時間（含毫秒）
         function formatTimestamp(ms) {
@@ -49,11 +55,13 @@
         }
 
         // 添加掃描記錄
-        scanHistory.push({
+        const record = {
             startTimeFormatted: formatTimestamp(startTime),
             endTimeFormatted: formatTimestamp(endTime),
             timeDifferenceSeconds: timeDifferenceSeconds
-        });
+        };
+        console.log('記錄:', record);
+        scanHistory.push(record);
 
         // 儲存到本地
         localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
