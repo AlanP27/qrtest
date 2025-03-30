@@ -93,23 +93,6 @@
             updateTableAndAverage();
         }
 
-        // 從URL獲取生成時間戳
-        const urlParams = new URLSearchParams(window.location.search);
-        const startTime = parseInt(urlParams.get('timestamp')) || Date.now();
-        const endTime = Date.now();
-
-        // 計算耗時（秒，保留三位小數）
-        const timeDifferenceSeconds = ((endTime - startTime) / 1000).toFixed(3);
-
-        // 格式化時間
-        const startTimeFormatted = formatTimestamp(startTime);
-        const endTimeFormatted = formatTimestamp(endTime);
-
-        // 添加到歷史記錄
-        const scanData = { startTimeFormatted, endTimeFormatted, timeDifferenceSeconds };
-        scanHistory.push(scanData);
-        localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
-
         // 初次更新表格和平均時間
         updateTableAndAverage();
     </script>
