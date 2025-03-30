@@ -33,6 +33,7 @@
     <table>
         <thead>
             <tr>
+                <th>生成時間</th>
                 <th>掃描時間</th>
                 <th>耗時 (秒)</th>
             </tr>
@@ -64,26 +65,23 @@
             const historyTable = document.getElementById('historyTable');
             historyTable.innerHTML = '';
             if (scanHistory.length === 0) {
-                historyTable.innerHTML = '<tr><td colspan="2">無記錄</td></tr>';
+                historyTable.innerHTML = '<tr><td colspan="3">無記錄</td></tr>';
             } else {
-                const firstScanTime = scanHistory[0].scanTime; // 以第一次掃描為基準
                 scanHistory.forEach(data => {
-                    const timeDifferenceSeconds = ((data.scanTime - firstScanTime) / 1000).toFixed(3);
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${formatTimestamp(data.scanTime)}</td>
-                        <td>${timeDifferenceSeconds}</td>
+                        <td>${formatTimestamp(data.startTime)}</td>
+                        <td>${formatTimestamp(data.endTime)}</td>
+                        <td>${data.timeDifferenceSeconds}</td>
                     `;
                     historyTable.appendChild(row);
                 });
             }
 
             // 計算平均掃描時間
-            if (scanHistory.length > 1) {
-                const totalTime = scanHistory.slice(1).reduce((sum, data) => {
-                    return sum + (data.scanTime - scanHistory[0].scanTime);
-                }, 0);
-                const averageTime = (totalTime / (scanHistory.length - 1) / 1000).toFixed(3);
+            if (scanHistory.length > 0) {
+                const totalTime = scanHistory.reduce((sum, data) => sum + parseFloat(data.timeDifferenceSeconds), 0);
+                const averageTime = (totalTime / scanHistory.length).toFixed(3);
                 document.getElementById('averageTime').innerHTML = `平均掃描時間: ${averageTime} 秒`;
             } else {
                 document.getElementById('averageTime').innerHTML = `平均掃描時間: 無記錄`;
