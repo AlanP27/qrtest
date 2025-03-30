@@ -33,7 +33,7 @@
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
         }
 
-        // 添加掃描記錄（與 index.html 和 view.html 格式一致）
+        // 添加掃描記錄
         scanHistory.push({
             startTimeFormatted: formatTimestamp(startTime),
             endTimeFormatted: formatTimestamp(endTime),
@@ -44,7 +44,7 @@
         localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
 
         // 自動跳轉到查看頁面
-        window.location.href = "https://alanp27.github.io/qrtest/view.html"; // 確保跳轉到正確檔案
+        window.location.href = "https://alanp27.github.io/qrtest/view.html";
     </script>
 </body>
 </html>
