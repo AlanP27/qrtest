@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>輸入掃描結果</title>
+</head>
+<body>
+    <h1>輸入掃描結果</h1>
+    <p>請用您的掃描設備掃描 QR Code，掃描結果會自動處理並跳轉</p>
+    <input type="text" id="barcodeInput" style="width: 80%;" placeholder="掃描結果會自動出現在這裡">
+    <p id="status">等待掃描...</p>
+
+    <script>
+        const barcodeInput = document.getElementById('barcodeInput');
+        const status = document.getElementById('status');
+
+        // 自動聚焦輸入框
+        barcodeInput.focus();
+
+        // 監聽輸入事件（掃描設備模擬鍵盤輸入）
+        barcodeInput.addEventListener('input', function() {
+            const barcode = barcodeInput.value.trim();
+            if (barcode) {
+                status.textContent = '處理中...';
+                processBarcode(barcode);
+            }
+        });
+
+        // 處理掃描結果
+        function processBarcode(barcode) {
+            try {
+                const url = new URL(barcode);
+                const timestamp = url.searchParams.get('timestamp');
+                if (!timestamp || isNaN(parseInt(timestamp))) {
+                    throw new Error('無效的 timestamp');
+                }
+                window.location.href = url.toString();
+            } catch (error) {
+                status.textContent = '無效的掃描結果，請確認掃描內容是一個有效的 URL！';
+                console.error('解析錯誤:', error);
+            }
+        }
+    </script>
+</body>
+</html>
