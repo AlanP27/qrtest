@@ -29,11 +29,14 @@
         // 處理掃描結果
         function processBarcode(barcode) {
             try {
+                console.log('掃描結果:', barcode);
                 const url = new URL(barcode);
                 const timestamp = url.searchParams.get('timestamp');
+                console.log('解析出的 timestamp:', timestamp);
                 if (!timestamp || isNaN(parseInt(timestamp))) {
                     throw new Error('無效的 timestamp');
                 }
+                status.textContent = '掃描成功，正在跳轉...';
                 window.location.href = url.toString();
             } catch (error) {
                 status.textContent = '無效的掃描結果，請確認掃描內容是一個有效的 URL！';
