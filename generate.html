@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>生成複雜 QR Code 網址</title>
+    <!-- 引入 kjua 庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/kjua@0.9.0/dist/kjua.min.js"></script>
 </head>
 <body>
     <h1>生成複雜 QR Code 網址</h1>
-    <button onclick="generateComplexUrl()">點我生成複雜網址</button>
-    <p id="result">點擊按鈕後，這裡會顯示網址，請複製並用 QR Code 生成工具生成 QR Code</p>
+    <button onclick="generateComplexUrl()">點我生成複雜 QR Code</button>
+    <p id="result">點擊按鈕後，這裡會顯示網址</p>
+    <div id="qrcode"></div>
 
     <script>
         function generateComplexUrl() {
@@ -21,6 +24,19 @@
             // 顯示生成的網址
             document.getElementById('result').innerHTML = complexUrl;
             console.log("Generated URL:", complexUrl);
+
+            // 清空之前的 QR Code
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+
+            // 使用 kjua 生成 QR Code
+            const qr = kjua({
+                text: complexUrl,
+                size: 200, // QR Code 大小
+                ecLevel: 'H', // 高錯誤校正
+                quiet: 2 // 邊距
+            });
+            qrcodeDiv.appendChild(qr);
         }
     </script>
 </body>
