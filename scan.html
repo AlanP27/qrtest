@@ -6,18 +6,32 @@
 </head>
 <body>
     <h1>掃描已記錄</h1>
-    <p>請前往查看頁面檢查結果：<a href="https://alanp27.github.io/qrtest/view">查看記錄</a></p>
+    <p>正在記錄掃描時間並跳轉...</p>
 
     <script>
         // 從本地儲存中加載掃描記錄
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
 
-        // 獲取當前時間戳
-        const scanTime = Date.now();
+        // 從 URL 獲取生成時間戳
+        const urlParams = new URLSearchParams(window.location.search);
+        const startTime = parseInt(urlParams.get('timestamp')) || Date.now();
+        const endTime = Date.now();
 
-        // 添加掃描記錄（僅儲存時間戳）
-        scanHistory.push({ scanTime });
+        // 計算耗時（秒，保留三位小數）
+        const timeDifferenceSeconds = ((endTime - startTime) / 1000).toFixed(3);
+
+        // 添加掃描記錄
+        scanHistory.push({
+            startTime: startTime,
+            endTime: endTime,
+            timeDifferenceSeconds: timeDifferenceSeconds
+        });
+
+        // 儲存到本地
         localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+
+        // 自動跳轉到查看頁面
+        window.location.href = "https://alanp27.github.io/qrtest/view";
     </script>
 </body>
 </html>
