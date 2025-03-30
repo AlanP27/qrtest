@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>生成 QR Code 網址</title>
+</head>
+<body>
+    <h1>生成 QR Code 網址</h1>
+    <button onclick="generateUrl()">點我生成網址</button>
+    <p id="result"></p>
+
+    <script>
+        function generateUrl() {
+            const timestamp = Date.now();
+            const qrUrl = `https://alanp27.github.io/qrtest/scan.html?timestamp=${timestamp}`;
+            document.getElementById('result').innerHTML = qrUrl;
+        }
+    </script>
+</body>
+</html>
