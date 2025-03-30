@@ -16,7 +16,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         let startTime = parseInt(urlParams.get('timestamp'));
 
-        // 如果 startTime 無效，預設為當前時間，並記錄錯誤
+        // 檢查 startTime 是否有效
         if (!startTime || isNaN(startTime)) {
             console.error('無法從 URL 獲取有效 timestamp，預設使用當前時間');
             startTime = Date.now();
@@ -29,7 +29,6 @@
 
         // 格式化時間戳為日期和時間（含毫秒）
         function formatTimestamp(ms) {
-            // 確保 ms 是一個有效數字
             if (!ms || isNaN(ms)) {
                 console.error('無效的時間戳:', ms);
                 return "無效時間";
