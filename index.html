@@ -2,7 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>QR Code掃描速率測試</title>
+    <title>QR Code 掃描速率測試</title>
+    <!-- 引入 kjua 庫生成 QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/kjua@0.9.0/dist/kjua.min.js"></script>
     <style>
         table {
             border-collapse: collapse;
@@ -18,19 +20,31 @@
             background-color: #f2f2f2;
         }
         button {
-            margin-top: 20px;
+            margin: 10px 0;
             padding: 10px;
             font-size: 16px;
         }
-        #averageTime {
-            margin-top: 20px;
+        input {
+            width: 80%;
+            padding: 8px;
+            margin: 10px 0;
+        }
+        #status, #averageTime {
+            margin-top: 10px;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>QR Code掃描速率測試</h1>
-    <p>請掃描列印的QR Code以測試回傳速率</p>
+    <h1>QR Code 掃描速率測試</h1>
+    <p>步驟 1：點擊下方按鈕生成 QR Code</p>
+    <button onclick="generateQRCode()">生成 QR Code</button>
+    <div id="qrcode"></div>
+
+    <p>步驟 2：用掃描器掃描 QR Code，掃描結果會自動輸入到下方輸入框</p>
+    <input type="text" id="scanInput" placeholder="掃描結果會自動出現在這裡">
+    <p id="status">等待掃描...</p>
+
     <h2>掃描記錄</h2>
     <table>
         <thead>
@@ -38,6 +52,7 @@
                 <th>生成時間</th>
                 <th>掃描時間</th>
                 <th>耗時 (秒)</th>
+                <th>與前一筆秒差 (秒)</th>
             </tr>
         </thead>
         <tbody id="historyTable"></tbody>
@@ -46,12 +61,24 @@
     <div id="averageTime"></div>
 
     <script>
-        // 從本地儲存中加載歷史記錄
+        // 從本地儲存中加載掃描記錄
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
+        let pendingScans = JSON.parse(localStorage.getItem('pendingScans')) || {};
+
+        const scanInput = document.getElementById('scanInput');
+        const status = document.getElementById('status');
 
         // 格式化時間戳為日期和時間（含毫秒）
         function formatTimestamp(ms) {
+            if (!ms || isNaN(ms)) {
+                console.error('無效的時間戳:', ms);
+                return "無效時間";
+            }
             const date = new Date(ms);
+            if (isNaN(date.getTime())) {
+                console.error('無法解析的日期:', ms);
+                return "無效時間";
+            }
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
@@ -62,19 +89,123 @@
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
         }
 
+        // 生成 QR Code
+        function generateQRCode() {
+            const scanId = Date.now().toString(); // 使用時間戳作為唯一 ID
+            const startTime = Date.now();
+            const qrContent = `SCANID:${scanId}`; // QR Code 內容簡單化
+
+            // 記錄待掃描的 ID 和生成時間
+            pendingScans[scanId] = { startTime: startTime };
+            localStorage.setItem('pendingScans', JSON.stringify(pendingScans));
+            console.log('生成 QR Code:', qrContent, 'startTime:', startTime);
+
+            // 清空之前的 QR Code
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+
+            // 使用 kjua 生成 QR Code
+            const qr = kjua({
+                text: qrContent,
+                size: 200,
+                ecLevel: 'H',
+                quiet: 2
+            });
+            qrcodeDiv.appendChild(qr);
+
+            // 確保輸入框有焦點
+            scanInput.focus();
+            status.textContent = '請掃描 QR Code...';
+        }
+
+        // 監聽掃描輸入
+        scanInput.addEventListener('input', function() {
+            const scanResult = scanInput.value.trim();
+            if (scanResult) {
+                status.textContent = '處理中...';
+                processScanResult(scanResult);
+            }
+        });
+
+        // 處理掃描結果
+        function processScanResult(result) {
+            try {
+                console.log('掃描結果:', result);
+                // 預期格式為 SCANID:xxxxxxxxxx
+                if (!result.startsWith('SCANID:')) {
+                    throw new Error('無效的掃描結果，格式應為 SCANID:xxxxxxxxxx');
+                }
+
+                const scanId = result.split('SCANID:')[1];
+                console.log('解析出的 scanId:', scanId);
+
+                // 檢查是否有對應的待掃描記錄
+                if (!pendingScans[scanId]) {
+                    throw new Error('未找到對應的掃描記錄，請重新生成 QR Code');
+                }
+
+                const startTime = pendingScans[scanId].startTime;
+                const scanTime = Date.now();
+                console.log('startTime:', startTime, 'scanTime:', scanTime);
+
+                // 計算耗時
+                const timeDifferenceSeconds = ((scanTime - startTime) / 1000).toFixed(3);
+
+                // 計算與前一筆的秒差
+                let timeDiffWithPrevious = "N/A";
+                if (scanHistory.length > 0) {
+                    const previousScanTime = scanHistory[scanHistory.length - 1].scanTime;
+                    timeDiffWithPrevious = ((scanTime - previousScanTime) / 1000).toFixed(3);
+                }
+
+                // 添加掃描記錄
+                const record = {
+                    startTime: startTime,
+                    scanTime: scanTime,
+                    startTimeFormatted: formatTimestamp(startTime),
+                    scanTimeFormatted: formatTimestamp(scanTime),
+                    timeDifferenceSeconds: timeDifferenceSeconds,
+                    timeDiffWithPrevious: timeDiffWithPrevious
+                };
+                console.log('記錄:', record);
+                scanHistory.push(record);
+
+                // 移除已掃描的記錄
+                delete pendingScans[scanId];
+                localStorage.setItem('pendingScans', JSON.stringify(pendingScans));
+                localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+
+                // 更新表格
+                updateTableAndAverage();
+
+                // 清空輸入框並重新聚焦
+                scanInput.value = '';
+                scanInput.focus();
+                status.textContent = '掃描成功！請生成下一個 QR Code';
+            } catch (error) {
+                status.textContent = '掃描失敗：' + error.message;
+                console.error('掃描錯誤:', error);
+            }
+        }
+
         // 更新表格和平均時間
         function updateTableAndAverage() {
             const historyTable = document.getElementById('historyTable');
             historyTable.innerHTML = '';
-            scanHistory.forEach(data => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${data.startTimeFormatted}</td>
-                    <td>${data.endTimeFormatted}</td>
-                    <td>${data.timeDifferenceSeconds}</td>
-                `;
-                historyTable.appendChild(row);
-            });
+            if (scanHistory.length === 0) {
+                historyTable.innerHTML = '<tr><td colspan="4">無記錄</td></tr>';
+            } else {
+                scanHistory.forEach(data => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.startTimeFormatted}</td>
+                        <td>${data.scanTimeFormatted}</td>
+                        <td>${data.timeDifferenceSeconds}</td>
+                        <td>${data.timeDiffWithPrevious}</td>
+                    `;
+                    historyTable.appendChild(row);
+                });
+            }
 
             // 計算平均掃描時間
             if (scanHistory.length > 0) {
@@ -89,11 +220,14 @@
         // 清除記錄
         function clearHistory() {
             scanHistory = [];
+            pendingScans = {};
             localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            localStorage.setItem('pendingScans', JSON.stringify(pendingScans));
             updateTableAndAverage();
+            status.textContent = '記錄已清除，請生成新的 QR Code';
         }
 
-        // 初次更新表格和平均時間
+        // 初次載入時更新表格
         updateTableAndAverage();
     </script>
 </body>
