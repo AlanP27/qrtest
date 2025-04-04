@@ -2,28 +2,52 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>生成複雜 QR Code 網址</title>
-    <!-- 引入 kjua 庫 -->
+    <title>生成 QR Code</title>
+    <!-- 引入 kjua 庫生成 QR Code -->
     <script src="https://cdn.jsdelivr.net/npm/kjua@0.9.0/dist/kjua.min.js"></script>
 </head>
 <body>
-    <h1>生成複雜 QR Code 網址</h1>
-    <button onclick="generateComplexUrl()">點我生成複雜 QR Code</button>
-    <p id="result">點擊按鈕後，這裡會顯示網址</p>
+    <h1>生成 QR Code</h1>
+    <p>點擊下方按鈕生成 QR Code，然後用掃描器掃描</p>
+    <button onclick="generateQRCode()">生成 QR Code</button>
     <div id="qrcode"></div>
+    <p id="status">請點擊按鈕生成 QR Code</p>
 
     <script>
-        function generateComplexUrl() {
-            const timestamp = Date.now();
-            // 基本網址
-            const baseUrl = `https://alanp27.github.io/qrtest/scan.html?timestamp=${timestamp}`;
-            // 增加填充內容，讓網址變長到約 200 字符（達到 Version 9）
-            const padding = "x".repeat(100) + "end";
-            const complexUrl = `${baseUrl}&data=${padding}`;
-            
-            // 顯示生成的網址
-            document.getElementById('result').innerHTML = complexUrl;
-            console.log("Generated URL:", complexUrl);
+        // 儲存待掃描的記錄
+        let pendingScans = JSON.parse(localStorage.getItem('pendingScans')) || {};
+
+        // 格式化時間戳為日期和時間（含毫秒）
+        function formatTimestamp(ms) {
+            if (!ms || isNaN(ms)) {
+                console.error('無效的時間戳:', ms);
+                return "無效時間";
+            }
+            const date = new Date(ms);
+            if (isNaN(date.getTime())) {
+                console.error('無法解析的日期:', ms);
+                return "無效時間";
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        // 生成 QR Code
+        function generateQRCode() {
+            const scanId = Date.now().toString(); // 使用時間戳作為唯一 ID
+            const startTime = Date.now();
+            const qrContent = `SCANID:${scanId}`; // QR Code 內容
+
+            // 記錄待掃描的 ID 和生成時間
+            pendingScans[scanId] = { startTime: startTime, startTimeFormatted: formatTimestamp(startTime) };
+            localStorage.setItem('pendingScans', JSON.stringify(pendingScans));
+            console.log('生成 QR Code:', qrContent, 'startTime:', startTime);
 
             // 清空之前的 QR Code
             const qrcodeDiv = document.getElementById('qrcode');
@@ -31,12 +55,14 @@
 
             // 使用 kjua 生成 QR Code
             const qr = kjua({
-                text: complexUrl,
-                size: 200, // QR Code 大小
-                ecLevel: 'H', // 高錯誤校正
-                quiet: 2 // 邊距
+                text: qrContent,
+                size: 200,
+                ecLevel: 'H',
+                quiet: 2
             });
             qrcodeDiv.appendChild(qr);
+
+            document.getElementById('status').textContent = `QR Code 已生成，掃描 ID: ${scanId}`;
         }
     </script>
 </body>
