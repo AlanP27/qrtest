@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>回報掃描結果</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        input {
+            width: 80%;
+            padding: 8px;
+            margin: 10px 0;
+        }
+        #status, #averageTime {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>回報掃描結果</h1>
+    <p>請輸入掃描器掃描的結果（例如 SCANID:1743342753754），然後點擊「回報」</p>
+    <input type="text" id="scanResultInput" placeholder="輸入掃描結果，例如 SCANID:xxxxxxxxxx">
+    <button onclick="reportScanResult()">回報</button>
+    <p id="status">等待回報...</p>
+
+    <h2>掃描記錄</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>生成時間</th>
+                <th>掃描時間</th>
+                <th>耗時 (秒)</th>
+                <th>與前一筆秒差 (秒)</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+    </table>
+    <button onclick="clearHistory()">清除記錄</button>
+    <div id="averageTime"></div>
+
+    <script>
+        // 從本地儲存中加載數據
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
+        let pendingScans = JSON.parse(localStorage.getItem('pendingScans')) || {};
+
+        // 格式化時間戳為日期和時間（含毫秒）
+        function formatTimestamp(ms) {
+            if (!ms || isNaN(ms)) {
+                console.error('無效的時間戳:', ms);
+                return "無效時間";
+            }
+            const date = new Date(ms);
+            if (isNaN(date.getTime())) {
+                console.error('無法解析的日期:', ms);
+                return "無效時間";
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        // 回報掃描結果
+        function reportScanResult() {
+            const scanResult = document.getElementById('scanResultInput').value.trim();
+            const status = document.getElementById('status');
+
+            if (!scanResult) {
+                status.textContent = '請輸入掃描結果！';
+                return;
+            }
+
+            try {
+                console.log('掃描結果:', scanResult);
+                // 預期格式為 SCANID:xxxxxxxxxx
+                if (!scanResult.startsWith('SCANID:')) {
+                    throw new Error('無效的掃描結果，格式應為 SCANID:xxxxxxxxxx');
+                }
+
+                const scanId = scanResult.split('SCANID:')[1];
+                console.log('解析出的 scanId:', scanId);
+
+                // 檢查是否有對應的待掃描記錄
+                if (!pendingScans[scanId]) {
+                    throw new Error('未找到對應的掃描記錄，請確認掃描 ID 是否正確');
+                }
+
+                const startTime = pendingScans[scanId].startTime;
+                const startTimeFormatted = pendingScans[scanId].startTimeFormatted;
+                const scanTime = Date.now();
+                console.log('startTime:', startTime, 'scanTime:', scanTime);
+
+                // 計算耗時
+                const timeDifferenceSeconds = ((scanTime - startTime) / 1000).toFixed(3);
+
+                // 計算與前一筆的秒差
+                let timeDiffWithPrevious = "N/A";
+                if (scanHistory.length > 0) {
+                    const previousScanTime = scanHistory[scanHistory.length - 1].scanTime;
+                    timeDiffWithPrevious = ((scanTime - previousScanTime) / 1000).toFixed(3);
+                }
+
+                // 添加掃描記錄
+                const record = {
+                    startTime: startTime,
+                    scanTime: scanTime,
+                    startTimeFormatted: startTimeFormatted,
+                    scanTimeFormatted: formatTimestamp(scanTime),
+                    timeDifferenceSeconds: timeDifferenceSeconds,
+                    timeDiffWithPrevious: timeDiffWithPrevious
+                };
+                console.log('記錄:', record);
+                scanHistory.push(record);
+
+                // 移除已掃描的記錄
+                delete pendingScans[scanId];
+                localStorage.setItem('pendingScans', JSON.stringify(pendingScans));
+                localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+
+                // 更新表格
+                updateTableAndAverage();
+
+                // 清空輸入框
+                document.getElementById('scanResultInput').value = '';
+                status.textContent = '回報成功！請輸入下一個掃描結果';
+            } catch (error) {
+                status.textContent = '回報失敗：' + error.message;
+                console.error('回報錯誤:', error);
+            }
+        }
+
+        // 更新表格和平均時間
+        function updateTableAndAverage() {
+            const historyTable = document.getElementById('historyTable');
+            historyTable.innerHTML = '';
+            if (scanHistory.length === 0) {
+                historyTable.innerHTML = '<tr><td colspan="4">無記錄</td></tr>';
+            } else {
+                scanHistory.forEach(data => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.startTimeFormatted}</td>
+                        <td>${data.scanTimeFormatted}</td>
+                        <td>${data.timeDifferenceSeconds}</td>
+                        <td>${data.timeDiffWithPrevious}</td>
+                    `;
+                    historyTable.appendChild(row);
+                });
+            }
+
+            // 計算平均掃描時間
+            if (scanHistory.length > 0) {
+                const totalTime = scanHistory.reduce((sum, data) => sum + parseFloat(data.timeDifferenceSeconds), 0);
+                const averageTime = (totalTime / scanHistory.length).toFixed(3);
+                document.getElementById('averageTime').innerHTML = `平均掃描時間: ${averageTime} 秒`;
+            } else {
+                document.getElementById('averageTime').innerHTML = `平均掃描時間: 無記錄`;
+            }
+        }
+
+        // 清除記錄
+        function clearHistory() {
+            scanHistory = [];
+            pendingScans = {};
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            localStorage.setItem('pendingScans', JSON.stringify(pendingScans));
+            updateTableAndAverage();
+            document.getElementById('status').textContent = '記錄已清除';
+        }
+
+        // 初次載入時更新表格
+        updateTableAndAverage();
+    </script>
+</body>
+</html>
